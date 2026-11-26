@@ -1,0 +1,14 @@
+metric,rcdpi_v1,rule
+return,5207.62613,5607.84415
+cost,4.20096,2.40000
+route_progress_m,576.94890,592.78075
+mean_planar_jerk_mps3,12.17710,3.08066
+collision,0.06,0.09
+offroad,0.15,0.03
+mean_speed_kmh,23.23217,23.23506
+distance_m,587.66160,599.86002
+near_stop_fraction,0.01591,0.00777
+executed_overlap_fraction,0,0
+mean_abs_delta_steer,0.03617,0.01033
+mean_abs_delta_longitudinal,0.04472,0.00320
+mean_inference_ms,8.21427,0.05737

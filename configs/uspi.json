@@ -1,0 +1,6 @@
+{
+  "beta": 1.0, "min_support": 5, "margin": 0.0, "min_improvement": 0.000001,
+  "steer_step": 0.08, "pedal_step": 0.12, "steer_ref_slack": 0.02, "pedal_ref_slack": 0.04,
+  "dt": 0.1, "horizon": 5, "wheelbase": 2.875, "max_wheel_angle": 0.5,
+  "accel_gain": 3.0, "brake_gain": 6.0, "lane_buffer": 0.25, "lateral_slack": 0.05, "heading_slack": 0.03
+}

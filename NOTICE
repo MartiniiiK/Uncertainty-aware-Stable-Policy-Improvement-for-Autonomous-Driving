@@ -1,0 +1,8 @@
+USPI is a research extension of EasyCarla-RL (SilverWings; Apache-2.0)
+https://github.com/silverwingsbot/EasyCarla-RL
+The archived upstream_snapshot/easycarla/envs/carla_env.py contains local modifications
+for reusing an already loaded map. The original upstream copyright and file header
+are retained. The agent snapshot includes Diffusion-QL code (Copyright 2022 Twitter,
+Inc and Zhendong Wang, Apache-2.0), with its original headers retained.
+https://github.com/twitter/diffusion-rl
+CARLA is an external dependency and is not redistributed here.
