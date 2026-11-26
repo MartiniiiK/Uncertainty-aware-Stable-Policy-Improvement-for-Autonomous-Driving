@@ -6,6 +6,12 @@ USPI 是面向结构化自动驾驶状态的离线强化学习策略改进框架
 
 **Research status.** 本仓库包含已开展正式闭环评估的 RCDPI V1，以及在其失败模式基础上设计并实现的 USPI（新版）。USPI 仅进行了无仿真器的代码单元测试，尚未开展新的 CARLA 闭环实验。历史实验结果不可视作 USPI 的性能，本文所述改进为算法机制和研究假设，不是经验性能或安全保证。当前系统仅用于仿真研究，不用于真实车辆控制。
 
+## Demo
+
+[![USPI / RCDPI live demo on the EasyCarla benchmark](media/demo_poster.jpg)](media/demo.mp4)
+
+点击上图播放片段（29 s，1280×720）。画面依次为标题卡、CARLA Town03 中的闭环行驶、鸟瞰视角与三方法（RCDPI / Diffusion-QL / Rule-based）轨迹对比，以及离线训练面板中的 FQE 曲线（reward / progress / safety cost / jerk 的 TD MSE 与评估进度）。该片段记录的是 V1 配置与早期复现，USPI 本身尚未进行闭环验证。
+
 ## 1. Motivation and research contributions
 
 离线 RL 允许从已有的驾驶数据学习控制策略，而不必在线探索潜在危险的状态动作空间。Diffusion-QL 通过条件扩散模型描述复杂的行为分布，再借助价值函数引导策略优化。然而，在需要连续控制的驾驶系统中，单步动作获得较高的预测价值，并不意味着执行该动作后能维持稳定的车辆轨迹。一方面，离线 Critic 会受到分布外动作和共享模型误差影响；另一方面，逐步独立采样的动作可能相互冲突或突然变化，破坏闭环控制稳定性。
@@ -68,9 +74,9 @@ $$j_t=\frac{\|\mathbf a_{xy,t+1}-\mathbf a_{xy,t}\|_2}{\Delta t}.$$
 
 ## 3. Reference policy and diffusion candidates
 
-参考策略 $\pi_0$ 是固定的局部航点跟踪 + 比例速度反馈 + 前车距离制动控制器。取第 4 个参考航点 $(x_w,y_w)$（下标 3），其航向误差为 $\theta=\operatorname{atan2}(y_w,\max(x_w,0.1))$，控制律为：
+参考策略 $\pi_0$ 是固定的局部航点跟踪 + 比例速度反馈 + 前车距离制动控制器。取第 4 个参考航点 $(x_w,y_w)$（下标 3），其航向误差为 $\theta=\mathrm{atan2}(y_w,\max(x_w,0.1))$，控制律为：
 
-$$\delta_0=\operatorname{clip}(1.5\theta,-0.8,0.8),\quad u_0=\operatorname{clip}(0.25(8-v),0,0.8),\quad b_0=\operatorname{clip}(0.35(v-8),0,1).$$
+$$\delta_0=\mathrm{clip}(1.5\theta,-0.8,0.8),\quad u_0=\mathrm{clip}(0.25(8-v),0,0.8),\quad b_0=\mathrm{clip}(0.35(v-8),0,1).$$
 
 若 $0<d_{front}<7$ m，则置 $u_0=0$ 且 $b_0\leftarrow\max(b_0,0.6)$。它不是完整 PID 或标准 Pure Pursuit；在结构化任务中它直接利用正确车道几何与速度目标，因此是强参考而非刻意弱化的基线。
 
@@ -162,13 +168,13 @@ $$\mathbf p_{h+1}=\mathbf p_h+\Delta t\bar v_h\begin{bmatrix}\cos(\psi_h+\Delta\
 
 参考航点组成分段线性中心线 $\Gamma$。对任意预测位置 $\mathbf p_h$ 和线段端点 $\mathbf q_i,\mathbf q_{i+1}$，用投影参数计算最近距离：
 
-$$\rho_i=\operatorname{clip}\left(\frac{(\mathbf p_h-\mathbf q_i)^\top(\mathbf q_{i+1}-\mathbf q_i)}{\|\mathbf q_{i+1}-\mathbf q_i\|_2^2},0,1\right),$$
+$$\rho_i=\mathrm{clip}\left(\frac{(\mathbf p_h-\mathbf q_i)^\top(\mathbf q_{i+1}-\mathbf q_i)}{\|\mathbf q_{i+1}-\mathbf q_i\|_2^2},0,1\right),$$
 
 $$d(\mathbf p_h,\Gamma)=\min_i\|\mathbf p_h-[\mathbf q_i+\rho_i(\mathbf q_{i+1}-\mathbf q_i)]\|_2.$$
 
 令 $i_h$ 为最近线段索引，$\psi_{i_h}$ 为该线段的方向；取整个预测窗口的最大中心线距离及最大绝对环绕航向误差：
 
-$$E_d(a)=\max_{1\leq h\leq H}d(\mathbf p_h,\Gamma),\quad E_\psi(a)=\max_{1\leq h\leq H}|\operatorname{wrap}(\psi_h-\psi_{i_h})|.$$
+$$E_d(a)=\max_{1\leq h\leq H}d(\mathbf p_h,\Gamma),\quad E_\psi(a)=\max_{1\leq h\leq H}|\mathrm{wrap}(\psi_h-\psi_{i_h})|.$$
 
 同样对参考动作 $a_0$ 执行代理 rollout。非参考动作必须满足：
 
@@ -184,7 +190,7 @@ $$\mathcal F_t=\{a\in\mathcal C_t\setminus\{a_0\}:\ \text{physical}(a),\ N_{\mat
 
 在可行集合内，采用确定性的字典序最大化，依次比较悲观 Cost 改进、Jerk 改进、Progress 改进和 Reward 改进：
 
-$$a_t=\begin{cases}\underset{a\in\mathcal F_t}{\operatorname{lexmax}}(L_c,L_j,L_p,L_r),&\mathcal F_t\ne\varnothing,\\a_0,&\mathcal F_t=\varnothing.\end{cases}$$
+$$a_t=\begin{cases}\underset{a\in\mathcal F_t}{\mathrm{lexmax}}(L_c,L_j,L_p,L_r),&\mathcal F_t\ne\varnothing,\\a_0,&\mathcal F_t=\varnothing.\end{cases}$$
 
 排序同值时按候选索引打破平局。执行后从 CARLA 回读实际命令并更新锚点；每个 episode reset 清空历史。全部筛选均在非参考动作上实施，参考是无条件可用的回退而非经过形式安全认证的动作。`actions.csv` 记录 `gate_support_count`、`gate_advantage_count`、`gate_continuity_count`、`gate_trajectory_count`、选中动作源及轨迹代理误差，用于后续诊断。四个 `*_improvement` 字段为悲观评分乘回对应 RMS 后的报告单位；不能与 V1 的最差成员差值混为相同定义。
 
